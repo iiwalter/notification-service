@@ -1,0 +1,107 @@
+<header class="header">
+  <div class="container">
+    <h1>{{ title }}</h1>
+    <div class="connection-status" [class.connected]="(connectionStatus$ | async)" [class.disconnected]="!(connectionStatus$ | async)">
+      <span class="status-dot"></span>
+      {{ (connectionStatus$ | async) ? 'Conectado' : 'Desconectado' }}
+    </div>
+  </div>
+</header>
+
+<main class="main-container">
+  
+  <section class="stats-section" *ngIf="(statusCounts$ | async) | keyvalue as stats">
+    <div class="stats-grid">
+      <div class="stat-card" *ngFor="let stat of stats">
+        <div class="stat-number">{{ stat.value }}</div>
+        <div class="stat-label">{{ getStatusText(stat.key) }}</div>
+      </div>
+    </div>
+  </section>
+
+  <section class="form-section">
+    <div class="card">
+      <h2>Enviar Nova Notificação</h2>
+      
+      <form (ngSubmit)="sendNotification()" class="notification-form">
+        <div class="form-group">
+          <label for="messageInput">Conteúdo da Mensagem:</label>
+          <textarea 
+            id="messageInput"
+            [formControl]="messageControl"
+            placeholder="Digite sua mensagem aqui..."
+            rows="4"
+            class="form-control">
+          </textarea>
+          <div class="error-message" *ngIf="messageControl.invalid && messageControl.touched">
+            Por favor, insira uma mensagem válida
+          </div>
+        </div>
+        
+        <div class="button-group">
+          <button 
+            type="submit" 
+            class="btn btn-primary"
+            [disabled]="messageControl.invalid || isSubmitting">
+            <span *ngIf="!isSubmitting">Enviar Notificação</span>
+            <span *ngIf="isSubmitting">Enviando...</span>
+          </button>
+          
+          <button 
+            type="button" 
+            class="btn btn-danger"
+            (click)="clearNotifications()">
+            Limpar Lista
+          </button>
+        </div>
+      </form>
+    </div>
+  </section>
+
+  <section class="notifications-section">
+    <div class="card">
+      <h2>Notificações Enviadas</h2>
+      <p class="subtitle">Acompanhe o status das suas notificações em tempo real</p>
+      
+      <div class="notifications-list" *ngIf="(notifications$ | async)?.length; else emptyState">
+        <div 
+          class="notification-item" 
+          *ngFor="let notification of (notifications$ | async); trackBy: trackByMessageId">
+          
+          <div class="notification-header">
+            <div class="notification-message">
+              <strong>{{ notification.messageContent }}</strong>
+            </div>
+            <div class="notification-status">
+              <span class="status-badge" [ngClass]="'status-' + notification.status.toLowerCase().replace('_', '-')">
+                {{ getStatusText(notification.status) }}
+              </span>
+            </div>
+          </div>
+          
+          <div class="notification-details">
+            <div class="detail-item">
+              <span class="detail-label">ID:</span>
+              <span class="detail-value">{{ notification.messageId }}</span>
+            </div>
+            <div class="detail-item">
+              <span class="detail-label">Enviado:</span>
+              <span class="detail-value">{{ notification.timestamp | date:'dd/MM/yyyy HH:mm:ss' }}</span>
+            </div>
+            <div class="detail-item">
+              <span class="detail-label">Status:</span>
+              <span class="detail-value">{{ getStatusText(notification.status) }}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <ng-template #emptyState>
+        <div class="empty-state">
+          <h3>Nenhuma notificação enviada ainda</h3>
+          <p>Envie sua primeira notificação usando o formulário acima!</p>
+        </div>
+      </ng-template>
+    </div>
+  </section>
+</main>

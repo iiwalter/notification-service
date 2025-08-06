@@ -1,0 +1,143 @@
+<div class="notificacao-container">
+  <mat-card class="header-card">
+    <mat-card-header>
+      <mat-card-title>
+        <mat-icon>notifications</mat-icon>
+        Serviço de Notificações
+      </mat-card-title>
+      <mat-card-subtitle>
+        Status da conexão: 
+        <span [class]="(connectionStatus$ | async) ? 'status-connected' : 'status-disconnected'">
+          {{ (connectionStatus$ | async) ? 'Conectado' : 'Desconectado' }}
+        </span>
+      </mat-card-subtitle>
+    </mat-card-header>
+  </mat-card>
+
+  <mat-card class="form-card">
+    <mat-card-header>
+      <mat-card-title>Enviar Nova Notificação</mat-card-title>
+    </mat-card-header>
+    <mat-card-content>
+      <div class="form-container">
+        <mat-form-field appearance="outline" class="full-width">
+          <mat-label>Conteúdo da Mensagem</mat-label>
+          <input 
+            matInput 
+            [formControl]="conteudoMensagemControl"
+            placeholder="Digite o conteúdo da sua notificação..."
+            (keypress)="onKeyPress($event)"
+            [disabled]="isLoading">
+          <mat-icon matSuffix>message</mat-icon>
+          <mat-hint>Pressione Enter para enviar</mat-hint>
+        </mat-form-field>
+
+        <button 
+          mat-raised-button 
+          color="primary" 
+          (click)="enviarNotificacao()"
+          [disabled]="isLoading || !(connectionStatus$ | async)"
+          class="send-button">
+          <mat-icon>{{ isLoading ? 'hourglass_empty' : 'send' }}</mat-icon>
+          {{ isLoading ? 'Enviando...' : 'Enviar Notificação' }}
+        </button>
+      </div>
+    </mat-card-content>
+  </mat-card>
+
+  <mat-card class="stats-card" *ngIf="(statusCounts$ | async) as counts">
+    <mat-card-header>
+      <mat-card-title>Estatísticas</mat-card-title>
+    </mat-card-header>
+    <mat-card-content>
+      <div class="stats-chips">
+        <mat-chip-listbox>
+          <mat-chip-option *ngFor="let status of counts | keyvalue" 
+                          [color]="getStatusColor(status.key)"
+                          selected>
+            <mat-icon>{{ getStatusIcon(status.key) }}</mat-icon>
+            {{ status.key }}: {{ status.value }}
+          </mat-chip-option>
+        </mat-chip-listbox>
+      </div>
+    </mat-card-content>
+  </mat-card>
+
+  <mat-card class="notifications-card">
+    <mat-card-header>
+      <mat-card-title>Notificações Enviadas</mat-card-title>
+      <mat-card-subtitle>
+        <span *ngIf="(notifications$ | async)?.length as count">
+          {{ count }} notificação{{ count !== 1 ? 's' : '' }}
+        </span>
+        <span *ngIf="!(notifications$ | async)?.length">
+          Nenhuma notificação enviada
+        </span>
+      </mat-card-subtitle>
+      <div class="spacer"></div>
+      <button 
+        mat-icon-button 
+        (click)="limparNotificacoes()"
+        matTooltip="Limpar todas as notificações"
+        *ngIf="(notifications$ | async)?.length">
+        <mat-icon>clear_all</mat-icon>
+      </button>
+    </mat-card-header>
+    
+    <mat-card-content>
+      <mat-list *ngIf="(notifications$ | async)?.length; else emptyState">
+        <mat-list-item 
+          *ngFor="let notification of (notifications$ | async); trackBy: trackByMessageId"
+          class="notification-item">
+          
+          <mat-icon matListItemIcon [color]="getStatusColor(notification.status)">
+            {{ getStatusIcon(notification.status) }}
+          </mat-icon>
+          
+          <div matListItemTitle class="notification-title">
+            {{ notification.messageContent }}
+          </div>
+          
+          <div matListItemLine class="notification-details">
+            <div class="notification-meta">
+              <span class="message-id">ID: {{ notification.messageId }}</span>
+              <span class="timestamp">{{ formatTimestamp(notification.timestamp) }}</span>
+            </div>
+            
+            <mat-chip 
+              [color]="getStatusColor(notification.status)"
+              class="status-chip">
+              {{ notification.status }}
+            </mat-chip>
+          </div>
+
+          <div matListItemLine 
+               *ngIf="notification.randomNumber || notification.processedAt || notification.error"
+               class="additional-info">
+            <small>
+              <span *ngIf="notification.randomNumber">
+                Número: {{ notification.randomNumber }} | 
+              </span>
+              <span *ngIf="notification.processedAt">
+                Processado em: {{ formatTimestamp(notification.processedAt) }} | 
+              </span>
+              <span *ngIf="notification.error" class="error-text">
+                Erro: {{ notification.error }}
+              </span>
+            </small>
+          </div>
+
+          <mat-divider></mat-divider>
+        </mat-list-item>
+      </mat-list>
+
+      <ng-template #emptyState>
+        <div class="empty-state">
+          <mat-icon class="empty-icon">notifications_none</mat-icon>
+          <h3>Nenhuma notificação</h3>
+          <p>Envie sua primeira notificação usando o formulário acima.</p>
+        </div>
+      </ng-template>
+    </mat-card-content>
+  </mat-card>
+</div>
